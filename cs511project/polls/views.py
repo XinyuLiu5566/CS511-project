@@ -1,10 +1,13 @@
 from django.shortcuts import render
+from .models import *
 
-# Create your views here.
-
-from django.http import HttpResponse
 
 
 def index(request):
-    # return HttpResponse("Hello, world. You're at the polls index.")
-    return render(request, 'polls/mainPage.html')
+    title = "all app info"
+    queryset = AppInfo.objects.all()
+    context = {
+        "title": title,
+        "queryset": queryset,
+    }
+    return render(request, 'polls/mainPage.html', context)
