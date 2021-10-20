@@ -4,7 +4,7 @@
 from re import match
 import dash_core_components as dcc
 import dash_html_components as html
-from pandas.core.arrays import string_
+# from pandas.core.arrays import string_
 import plotly.express as px
 import pandas as pd
 from django_plotly_dash import DjangoDash
@@ -13,6 +13,8 @@ from .models import *
 from django.core import serializers
 from django.http import JsonResponse
 import numpy as np
+from django.db.models import Avg
+
 
 colors = {
     'background': '#222222',
@@ -20,7 +22,16 @@ colors = {
 }
 
 app = DjangoDash("DashApp")
+
 data = list(AppInfo.objects.all().values())
+
+# Average value stored as dictionary, tested in other files
+# e.g for count {{"Education":2.3}, {"Sport":1.03}, {"Game":0.88}, .....}
+rating_avg = AppInfo.objects.values('category').annotate(average = Avg('rating'))
+rating_count_avg = AppInfo.objects.values('category').annotate(average = Avg('rating_count'))
+install_avg = AppInfo.objects.values('category').annotate(average = Avg('install_number'))
+price_avg = AppInfo.objects.values('category').annotate(average = Avg('price'))
+
 name_origin = []
 named = []
 rating = []
