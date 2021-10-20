@@ -17,7 +17,7 @@ class AppInfo(models.Model):
     ad_support = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.appname + '-' + self.app_id
+        return self.app_name + '-' + self.app_id
 
     class Meta:
         managed = False
