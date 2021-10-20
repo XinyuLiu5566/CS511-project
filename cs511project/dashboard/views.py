@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from .models import Phone
 
 def home(request):
-	phones = Phone.objects.all()
+	phones = Phone.objects.all().using('cluster0')
 	context = {'phones': phones}
 	return render(request, 'dashboard/home.html', context)
 
