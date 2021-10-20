@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 
 class AppInfo(models.Model):
+    idx = models.CharField(max_length=255)
     app_name = models.CharField(max_length=255)
     app_id = models.CharField(primary_key=True, max_length=255)
     category = models.CharField(max_length=255)
@@ -17,7 +18,11 @@ class AppInfo(models.Model):
     ad_support = models.CharField(max_length=255)
 
     def __str__(self):
+<<<<<<< HEAD
         return self.app_name + '-' + self.app_id
+=======
+        return self.App_Name + '-' + self.app_id
+>>>>>>> 2581872703ac51d0d882ebaf0ebd543c45fc9e6a
 
     class Meta:
         managed = False
