@@ -27,11 +27,10 @@ data = list(AppInfo.objects.all().values())
 
 # Average value stored as dictionary, tested in other files
 # e.g for count {{"Education":2.3}, {"Sport":1.03}, {"Game":0.88}, .....}
-rating_avg = AppInfo.objects.values('category').annotate(average = Avg('rating'))
-rating_count_avg = AppInfo.objects.values('category').annotate(average = Avg('rating_count'))
-install_avg = AppInfo.objects.values('category').annotate(average = Avg('install_number'))
-price_avg = AppInfo.objects.values('category').annotate(average = Avg('price'))
-
+rating_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating')))
+rating_count_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating_count')))
+install_avg = list(AppInfo.objects.values('category').annotate(average = Avg('install_number')))
+price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('price')))
 name_origin = []
 named = []
 rating = []
@@ -41,8 +40,7 @@ rating_count = []
 price = []
 age_required = []
 ad_support = []
-
-for i in range(0,30):
+for i in range(0,len(data)):
     name_origin.append(data[i]['app_name'])
     named.append((str)(data[i]['idx'])+':'+(data[i]['app_name'][:8] if len(data) > 8 else data[i]['app_name'])) 
     rating.append(data[i]['rating'])
@@ -59,6 +57,7 @@ df = pd.DataFrame({
     "Rating": rating
 })
 fig = px.bar(df, x="App", y="Rating", color="Category", barmode="group")
+fig.update_xaxes(visible=False)
 
 scatterPlot = px.scatter(x=maximum_install, y=rating, hover_name=name_origin)
 scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191970',font_color=colors['text'])
@@ -69,15 +68,19 @@ scatterPlot.update_yaxes(title='Rating')
 
 dt = pd.DataFrame(data)
 
-def generate_table(dataframe, max_rows=30):
+def generate_table(max_rows=50):
     return html.Table([
         html.Thead(
-            html.Tr([html.Th(dataframe.columns[i]) for i in range(1,7)]),
+            html.Tr([html.Th('Category'),html.Th('Avg Rating'),html.Th('Avg Rating Count'),html.Th('Avg Maximum Install'),html.Th('Avg Price')])
         ),
         html.Tbody([
             html.Tr([
-                html.Td(dataframe.iloc[i][dataframe.columns[j]]) for j in range(1,7) 
-            ], style={ 'border': 'solid', 'border-width': '1px 0'}) for i in range(min(len(dataframe), max_rows))
+                html.Td(rating_avg[i]['category']),
+                html.Td(rating_avg[i]['average']),
+                html.Td(rating_count_avg[i]['average']),
+                html.Td(install_avg[i]['average']),
+                html.Td(price_avg[i]['average']),
+            ], style={ 'border': 'solid', 'border-width': '1px 0'}) for i in range(min(len(rating_avg), max_rows))
         ])
     ],style={'width': '100%', 'border-collapse': 'collapse'})
 
@@ -92,7 +95,7 @@ app.layout = html.Div(children=[
         }
     ),
     html.H2(children='Summary'),
-    generate_table(dt),
+    generate_table(),
     html.H2(children='Bar Chart:', style={
         'textAlign': 'left',
     }),
@@ -187,6 +190,7 @@ def update_graph(color_value, yaxis_value):
         paper_bgcolor='#191970',
         font_color=colors['text']
     )
+    fig.update_xaxes(visible=False)
     return fig
 
 @app.callback(
