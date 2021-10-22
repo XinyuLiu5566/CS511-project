@@ -18,8 +18,8 @@ class AppInfo(models.Model):
     ad_support = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.App_Name + '-' + self.app_id
+        return self.app_name + '-' + self.app_id
 
     class Meta:
         managed = False
-        db_table = 'google_playstore'
+        db_table = 'google_store'
