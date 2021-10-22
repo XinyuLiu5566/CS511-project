@@ -35,7 +35,7 @@ price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('pric
 named = []
 rating = []
 category = []
-maximum_install = []
+install_number = []
 rating_count = []
 price = []
 age_required = []
@@ -44,7 +44,7 @@ for i in range(0,len(data)):
     named.append(data[i]['app_name']) 
     rating.append(data[i]['rating'])
     category.append(data[i]['category'])
-    maximum_install.append(data[i]['install_number'])
+    install_number.append(data[i]['install_number'])
     rating_count.append(data[i]['rating_count'])
     price.append(data[i]['price'])
     age_required.append(data[i]['age_required'])
@@ -58,9 +58,9 @@ df = pd.DataFrame({
 fig = px.bar(df, x="App", y="Rating", color="Category", barmode="group")
 fig.update_xaxes(visible=False)
 
-scatterPlot = px.scatter(x=maximum_install, y=rating, hover_name=named)
+scatterPlot = px.scatter(x=install_number, y=rating, hover_name=named)
 scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191970',font_color=colors['text'])
-scatterPlot.update_xaxes(title='Maximum Install')
+scatterPlot.update_xaxes(title='Install Number')
 scatterPlot.update_yaxes(title='Rating')
 
 #Table generating
@@ -70,7 +70,7 @@ dt = pd.DataFrame(data)
 def generate_table(max_rows=50):
     return html.Table([
         html.Thead(
-            html.Tr([html.Th('Category'),html.Th('Avg Rating'),html.Th('Avg Rating Count'),html.Th('Avg Maximum Install'),html.Th('Avg Price')])
+            html.Tr([html.Th('Category'),html.Th('Avg Rating'),html.Th('Avg Rating Count'),html.Th('Avg Install'),html.Th('Avg Price')])
         ),
         html.Tbody([
             html.Tr([
@@ -85,7 +85,7 @@ def generate_table(max_rows=50):
 
 #SpreadSheet columns
 params = [
-    'Category', 'Rating', 'Rating Count', 'Maximum Install',
+    'Category', 'Rating', 'Rating Count', 'Install Number',
     'Price', 'Age Required', 'Add Support'
 ]
 
@@ -113,7 +113,7 @@ app.layout = html.Div(children=[
         }),
         dcc.Dropdown(
             id='yaxis_value',
-            options=[{'label': i, 'value': i} for i in ['Rating','Maximum Install', 'Rating Count', 'Price']],
+            options=[{'label': i, 'value': i} for i in ['Rating','Install Number', 'Rating Count', 'Price']],
             value='Rating',
             style={ 'color': '#000000','background-color': '#A0A0A0'} 
         ),
@@ -141,8 +141,8 @@ app.layout = html.Div(children=[
         }),
         dcc.Dropdown(
             id='scatterx',
-            options=[{'label': i, 'value': i} for i in ['Maximum Install','Rating', 'Rating Count', 'Price']],
-            value='Maximum Install',
+            options=[{'label': i, 'value': i} for i in ['Install Number','Rating', 'Rating Count', 'Price']],
+            value='Install Number',
             style={ 'color': '#000000','background-color': '#A0A0A0'} 
         ),
     ], style={'width': '25%', 'display': 'inline-block'}),
@@ -152,7 +152,7 @@ app.layout = html.Div(children=[
         }),
         dcc.Dropdown(
             id='scattery',
-            options=[{'label': i, 'value': i} for i in ['Rating','Maximum Install', 'Rating Count', 'Price']],
+            options=[{'label': i, 'value': i} for i in ['Rating','Install Number', 'Rating Count', 'Price']],
             value='Rating',
             style={ 'color': '#000000','background-color': '#A0A0A0'} 
         ),
@@ -184,11 +184,12 @@ app.layout = html.Div(children=[
             [{'id': p, 'name': p} for p in params]
         ),
         data=[
-            dict({'App Name':named[i], 'Category': category[i], 'Rating': rating[i], 'Rating Count': rating_count[i], 'Maximum Install': maximum_install[i],
+            dict({'App Name':named[i], 'Category': category[i], 'Rating': rating[i], 'Rating Count': rating_count[i], 'Install Number': install_number[i],
     'Price': price[i], 'Age Required': age_required[i], 'Add Support':ad_support[i]})
             for i in range(100)
         ],
         editable=True,
+        export_format='csv',
         style_header={
             'backgroundColor': 'rgb(50, 50, 50)',
             'fontWeight': 'bold'
@@ -213,8 +214,8 @@ def update_graph(color_value, yaxis_value):
     elif color_value == 'Ad Support':
         cval = ad_support
     yval = rating
-    if yaxis_value == 'Maximum Install':
-        yval = maximum_install
+    if yaxis_value == 'Install Number':
+        yval = install_number
     elif yaxis_value == 'Rating Count':
         yval = rating_count
     elif yaxis_value == 'Price':
@@ -238,9 +239,9 @@ def update_graph(color_value, yaxis_value):
     Input('scatterx', 'value'),
     Input('scattery', 'value'))
 def update_scatter(scatterx, scattery):
-    xval = maximum_install
-    if scatterx == 'Maximum Install':
-        xval = maximum_install
+    xval = install_number
+    if scatterx == 'Install Number':
+        xval = install_number
     elif scatterx == 'Rating Count':
         xval = rating_count
     elif scatterx == 'Price':
@@ -248,8 +249,8 @@ def update_scatter(scatterx, scattery):
     elif scatterx == 'Rating':
         xval = rating
     yval = rating
-    if scattery == 'Maximum Install':
-        yval = maximum_install
+    if scattery == 'Install Number':
+        yval = install_number
     elif scattery == 'Rating Count':
         yval = rating_count
     elif scattery == 'Price':
@@ -270,7 +271,7 @@ def update_spreadsheet(p):
     base = ((int)(p)-1)*100
     boundary = min(100, len(named)-base)
     return [
-            dict({'App Name':named[base+i], 'Category': category[base+i], 'Rating': rating[base+i], 'Rating Count': rating_count[base+i], 'Maximum Install': maximum_install[i],
+            dict({'App Name':named[base+i], 'Category': category[base+i], 'Rating': rating[base+i], 'Rating Count': rating_count[base+i], 'Install Number': install_number[i],
     'Price': price[base+i], 'Age Required': age_required[base+i], 'Add Support':ad_support[base+i]})
             for i in range(boundary)
     ]
