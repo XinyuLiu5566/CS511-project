@@ -6,5 +6,6 @@ import polls.dash_app_mongo
 
 urlpatterns = [
     path('', views.index, name="index"),
-    path('mongo_backend/', views.mongo_index, name="mongo_index")
+    path('mongo_backend/', views.mongo_index, name="mongo_index"),
+    path('neo4j_backend/', views.neo4j_index, name="neo4j_index")
 ]

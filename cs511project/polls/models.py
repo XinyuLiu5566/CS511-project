@@ -1,6 +1,24 @@
 from django.db import models
-
+from neomodel import (config, StructuredNode, StringProperty, IntegerProperty, UniqueIdProperty, RelationshipTo)
 # Create your models here.
+config.DATABASE_URL = 'bolt://neo4j:00000000@localhost:7687'
+
+class User(StructuredNode):
+    name = StringProperty(unique_index=True)
+    gender = StringProperty()
+
+class Company(StructuredNode):
+    name = StringProperty(unique_index=True)
+    address = StringProperty()
+    year = StringProperty()
+
+class App(StringProperty):
+    name = StringProperty(unique_index=True)
+    category = StringProperty()
+    year = StringProperty()
+
+
+
 
 class AppInfo(models.Model):
     idx = models.CharField(max_length=255)
