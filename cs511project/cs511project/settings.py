@@ -79,11 +79,18 @@ WSGI_APPLICATION = 'cs511project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'djangodatabase',
+        'NAME': 'cs511',
         'USER': 'root',
-        'PASSWORD': '00000000',
+        'PASSWORD': 'apple12345',
         'HOST': 'localhost',
         'PORT': '3306',
+    },
+    'cluster0':{
+        'ENGINE': 'djongo',
+        'NAME': 'cs511',
+        'CLIENT':{
+            'host': 'mongodb+srv://apple:apple12345@cluster0.yra3h.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
+        },
     }
 }
 
