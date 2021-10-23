@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 import polls.dash_app
 import polls.dash_app_mongo
+import polls.dash_app_neo4j
 
 urlpatterns = [
     path('', views.index, name="index"),

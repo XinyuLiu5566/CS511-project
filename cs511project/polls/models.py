@@ -12,7 +12,7 @@ class Company(StructuredNode):
     address = StringProperty()
     year = StringProperty()
 
-class App(StringProperty):
+class App(StructuredNode):
     name = StringProperty(unique_index=True)
     category = StringProperty()
     year = StringProperty()
