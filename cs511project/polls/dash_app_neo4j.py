@@ -52,6 +52,13 @@ for company in companies:
     company_address.append(company.address)
     company_year.append(company.year)
 
+df = pd.DataFrame({
+    "App": app_name,
+    "Category": category,
+    "Rating": rating
+})
+fig = px.bar(df, x="App", y="Rating", color="Category", barmode="group")
+fig.update_xaxes(visible=False)
 
 #App layout
 app = DjangoDash("DashAppNeo4j")
@@ -110,6 +117,40 @@ app.layout = html.Div(children=[
             ], style={ 'border': 'solid', 'border-width': '1px 0'}) for i in range(len(app_name))
         ])
     ],style={'width': '100%', 'border-collapse': 'collapse'}),
+    html.H2(children='Bar Chart:', style={
+        'textAlign': 'left',
+    }),
+    html.Div(children='Y Axis Value', style={
+        'textAlign': 'left',
+        'color': '#222222',
+    }),
+    html.Div([
+        html.H3(children='Y-axis:', style={
+            'textAlign': 'left',
+        }),
+        dcc.Dropdown(
+            id='yaxis_value',
+            options=[{'label': i, 'value': i} for i in ['Rating','Install Number', 'Rating Count', 'Price']],
+            value='Rating',
+            style={ 'color': '#000000','background-color': '#A0A0A0'} 
+        ),
+    ], style={'width': '25%', 'display': 'inline-block'}),
+    html.Div([
+        html.H3(children='Group by (Colors):', style={
+            'textAlign': 'left',
+        }),
+        dcc.Dropdown(
+            id='color_value',
+            options=[{'label': i, 'value': i} for i in ['Category', 'Age Required', 'Ad Support']],
+            value='Category',
+            style={ 'color': '#000000','background-color': '#A0A0A0'} 
+        ),
+    ], style={'width': '25%', 'display': 'inline-block', 'left': '65%', 'position': 'absolute'}),
+    dcc.Graph(
+        id='example-graph',
+        figure=fig,
+        style={'width': '100%', 'display': 'inline-block'}
+    ),
 ], style={'background-color': '#191970', 'color': '#FF4500', 'font-family': '"Trebuchet MS", sans-serif'})
 
 
