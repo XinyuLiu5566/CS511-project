@@ -22,8 +22,4 @@ def mongo_index(request):
     return render(request, 'polls/mongoPage.html')
 
 def neo4j_index(request):
-    query = User.nodes.all()
-    context = {
-        "query" : query
-    }
-    return render(request, 'polls/neo4jPage.html', context)
+    return render(request, 'polls/neo4jPage.html')

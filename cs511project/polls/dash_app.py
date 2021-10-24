@@ -24,6 +24,23 @@ colors = {
 
 app = DjangoDash("DashApp")
 
+data_to_insert = AppInfo(
+    idx="94875555",
+    app_name="HelloWorldMyFriend",
+    app_id="94875555",
+    category = "Programming",
+    rating = 5.0,
+    rating_count = 100,
+    install_number = 100,
+    price = 12,
+    size = "50M",
+    system_required = "I dont know",
+    release_date = "2000-01-01",
+    age_required = "Teen",
+    ad_support= "False"
+    )
+data_to_insert.save()
+
 data = list(AppInfo.objects.all().values())
 
 # Average value stored as dictionary, tested in other files
