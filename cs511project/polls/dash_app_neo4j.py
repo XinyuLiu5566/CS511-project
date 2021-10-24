@@ -24,10 +24,17 @@ colors = {
 
 app = DjangoDash("DashAppNeo4j")
 
-users = list(User.nodes.all().values())
-apps = list(App.nodes.all().values())
-companies = list(Company.nodes.all().values())
+users = User.nodes.all()
+apps = App.nodes.all()
+companies = Company.nodes.all()
 
+print(users)
+print(type(users))
+print(apps)
+print(companies)
+
+for i in users:
+    print(i.name)
 
 # Average value stored as dictionary, tested in other files
 # e.g for count {{"Education":2.3}, {"Sport":1.03}, {"Game":0.88}, .....}

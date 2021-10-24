@@ -1,7 +1,7 @@
 from django.db import models
 from neomodel import (config, StructuredNode, StringProperty, IntegerProperty, UniqueIdProperty, RelationshipTo)
 # Create your models here.
-config.DATABASE_URL = 'bolt://neo4j:00000000@localhost:7687'
+config.DATABASE_URL = 'bolt://neo4j:00000000@localhost:11009'
 
 class User(StructuredNode):
     name = StringProperty(unique_index=True)
@@ -12,7 +12,7 @@ class Company(StructuredNode):
     address = StringProperty()
     year = StringProperty()
 
-class App(StringProperty):
+class App(StructuredNode):
     name = StringProperty(unique_index=True)
     category = StringProperty()
     year = StringProperty()
