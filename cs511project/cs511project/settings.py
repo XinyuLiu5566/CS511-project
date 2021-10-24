@@ -79,11 +79,9 @@ WSGI_APPLICATION = 'cs511project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cs511',
+        'NAME': 'djangodatabase',
         'USER': 'root',
-        'PASSWORD': 'apple12345',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'PASSWORD': '00000000',
     },
     'cluster0':{
         'ENGINE': 'djongo',

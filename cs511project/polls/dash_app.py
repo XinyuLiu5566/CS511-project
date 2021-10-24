@@ -9,7 +9,7 @@ import dash_table
 import plotly.express as px
 import pandas as pd
 from django_plotly_dash import DjangoDash
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from .models import *
 from django.core import serializers
 from django.http import JsonResponse
@@ -32,7 +32,7 @@ rating_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rat
 rating_count_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating_count')))
 install_avg = list(AppInfo.objects.values('category').annotate(average = Avg('install_number')))
 price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('price')))
-named = []
+app_name = []
 rating = []
 category = []
 install_number = []
@@ -40,8 +40,12 @@ rating_count = []
 price = []
 age_required = []
 ad_support = []
+
+# global variables
+base = 0
+
 for i in range(0,len(data)):
-    named.append(data[i]['app_name']) 
+    app_name.append(data[i]['app_name']) 
     rating.append(data[i]['rating'])
     category.append(data[i]['category'])
     install_number.append(data[i]['install_number'])
@@ -51,14 +55,14 @@ for i in range(0,len(data)):
     ad_support.append(data[i]['ad_support'])
 
 df = pd.DataFrame({
-    "App": named,
+    "App": app_name,
     "Category": category,
     "Rating": rating
 })
 fig = px.bar(df, x="App", y="Rating", color="Category", barmode="group")
 fig.update_xaxes(visible=False)
 
-scatterPlot = px.scatter(x=install_number, y=rating, hover_name=named)
+scatterPlot = px.scatter(x=install_number, y=rating, hover_name=app_name)
 scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191970',font_color=colors['text'])
 scatterPlot.update_xaxes(title='Install Number')
 scatterPlot.update_yaxes(title='Rating')
@@ -81,12 +85,12 @@ def generate_table(max_rows=50):
                 html.Td(price_avg[i]['average']),
             ], style={ 'border': 'solid', 'border-width': '1px 0'}) for i in range(min(len(rating_avg), max_rows))
         ])
-    ],style={'width': '100%', 'border-collapse': 'collapse'})
+    ],id = 'summary', style={'width': '100%', 'border-collapse': 'collapse'})
 
 #SpreadSheet columns
 params = [
-    'Category', 'Rating', 'Rating Count', 'Install Number',
-    'Price', 'Age Required', 'Add Support'
+    'category', 'rating', 'rating_count', 'install_number',
+    'price', 'age_required', 'ad_support'
 ]
 
 #App layout
@@ -171,7 +175,7 @@ app.layout = html.Div(children=[
         html.Div([
             dcc.Dropdown(
                 id='pagedrop',
-                options=[{'label': i/100+1, 'value': i/100+1} for i in range(0, len(named), 100)],
+                options=[{'label': i/100+1, 'value': i/100+1} for i in range(0, len(app_name), 100)],
                 value=1,
                 style={ 'color': '#000000','background-color': '#A0A0A0'} 
             )],style={'width': '10%'}
@@ -180,13 +184,11 @@ app.layout = html.Div(children=[
     dash_table.DataTable(
         id='spreadsheet',
         columns=(
-            [{'id': 'App Name', 'name': 'App Name'}] +
+            [{'id': 'app_name', 'name': 'app_name'}] +
             [{'id': p, 'name': p} for p in params]
         ),
         data=[
-            dict({'App Name':named[i], 'Category': category[i], 'Rating': rating[i], 'Rating Count': rating_count[i], 'Install Number': install_number[i],
-    'Price': price[i], 'Age Required': age_required[i], 'Add Support':ad_support[i]})
-            for i in range(100)
+            dict({'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(100)
         ],
         editable=True,
         export_format='csv',
@@ -199,15 +201,31 @@ app.layout = html.Div(children=[
             'color': 'black'
         },
     ),
+    html.Div(id = 'my_output', style={'display':'None'})
 ], style={'background-color': '#191970', 'color': '#FF4500', 'font-family': '"Trebuchet MS", sans-serif'})
 
 #Callbacks:
+@app.callback(
+    Output('summary', 'children'),
+    Input('my_output', 'children')
+    )
+def update_table(my_output):
+    global rating_avg, rating_count_avg, install_avg, price_avg
+    rating_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating')))
+    rating_count_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating_count')))
+    install_avg = list(AppInfo.objects.values('category').annotate(average = Avg('install_number')))
+    price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('price')))
+
+    print('update summary table')
+    return generate_table()
+
 
 @app.callback(
     Output('example-graph', 'figure'),
     Input('color_value', 'value'),
-    Input('yaxis_value', 'value'))
-def update_graph(color_value, yaxis_value):
+    Input('yaxis_value', 'value'),
+    Input('my_output', 'children'))
+def update_graph(color_value, yaxis_value, my_output):
     cval = category
     if color_value == 'Age Required':
         cval = age_required
@@ -221,7 +239,7 @@ def update_graph(color_value, yaxis_value):
     elif yaxis_value == 'Price':
         yval = price
     df = pd.DataFrame({
-    "App": named,
+    "App": app_name,
     color_value: cval,
     yaxis_value: yval
     })
@@ -232,13 +250,15 @@ def update_graph(color_value, yaxis_value):
         font_color=colors['text']
     )
     fig.update_xaxes(visible=False)
+    print("update barchart")
     return fig
 
 @app.callback(
     Output('scatter-plot', 'figure'),
     Input('scatterx', 'value'),
-    Input('scattery', 'value'))
-def update_scatter(scatterx, scattery):
+    Input('scattery', 'value'),
+    Input('my_output', 'children'))
+def update_scatter(scatterx, scattery, my_output):
     xval = install_number
     if scatterx == 'Install Number':
         xval = install_number
@@ -258,20 +278,42 @@ def update_scatter(scatterx, scattery):
     elif scatterx == 'Rating':
         yval = rating
 
-    scatterPlot = px.scatter(x=xval, y=yval, hover_name=named)
+    scatterPlot = px.scatter(x=xval, y=yval, hover_name=app_name)
     scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191970',font_color=colors['text'])
     scatterPlot.update_xaxes(title=scatterx)
     scatterPlot.update_yaxes(title=scattery)
+    print("update scatterplot")
     return scatterPlot
 
 @app.callback(
     Output('spreadsheet', 'data'),
     Input('pagedrop', 'value'))
 def update_spreadsheet(p):
+    global base 
     base = ((int)(p)-1)*100
-    boundary = min(100, len(named)-base)
+    boundary = min(100, len(app_name)-base)
     return [
-            dict({'App Name':named[base+i], 'Category': category[base+i], 'Rating': rating[base+i], 'Rating Count': rating_count[base+i], 'Install Number': install_number[i],
-    'Price': price[base+i], 'Age Required': age_required[base+i], 'Add Support':ad_support[base+i]})
-            for i in range(boundary)
+        dict({'app_name':app_name[base+i], 'category': category[base+i], 'rating': rating[base+i], 'rating_count': rating_count[base+i], 'install_number': install_number[i], 'price': price[base+i], 'age_required': age_required[base+i], 'ad_support':ad_support[base+i]}) for i in range(boundary)
     ]
+
+@app.callback(
+    Output('my_output', 'children'),
+    Input('spreadsheet', 'data_timestamp'),
+    State('spreadsheet', 'active_cell'),
+    State('spreadsheet', 'data'))
+def display_output(timestamp, cell, data):
+    column_name = cell['column_id']
+    row = cell['row']-1
+    id = base+row
+    value = data[row][column_name]
+    print('value = ', value)
+    print('idx = ', id)
+    print('column = ', column_name)
+
+    target = AppInfo.objects.get(idx=id)
+    exec("target." + column_name + " = " + '"' + (str)(value) + '"')
+    target.save()
+
+    exec(column_name + "["+ (str)(id) +"] = " + '"' + (str)(value) + '"')
+
+    return 'Output: {}'.format(data[cell['row']-1]['app_name'])
