@@ -13,6 +13,7 @@ import pandas as pd
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output
 from .models import *
+from neomodel import db
 import numpy as np
 from django.db.models import Avg
 
@@ -26,13 +27,30 @@ colors = {
 users = User.nodes.all()
 apps = App.nodes.all()
 companies = Company.nodes.all()
-
+q1 = db.cypher_query("MATCH (u:User)-[r:download]->(a:App) return a.name, count(u)")[0]
+q2 = db.cypher_query("MATCH (u:User)-[r:download]->(a:App) return a.category, count(u)")[0]
+q3 = db.cypher_query("MATCH (c:Company)-[r:develop]->(a:App) return c.name, count(a)")[0]
+q1_name = []
+app_download_count = []
+q2_name = []
+company_develop_count = []
+q3_name = []
+app_category_count = []
 # get the info about users from neo4j database
 user_name = []
 user_gender = []
 for user in users:
     user_name.append(user.name)
     user_gender.append(user.gender)
+for i in range(len(q1)):
+    app_download_count.append(q1[i][1])
+    q1_name.append(q1[i][0])
+for i in range(len(q2)):
+    app_category_count.append(q2[i][1])
+    q2_name.append(q2[i][0])
+for i in range(len(q3)):
+    company_develop_count.append(q3[i][1])
+    q3_name.append(q3[i][0])
 
 # get the info about apps from neo4j database
 app_name = []
@@ -52,6 +70,12 @@ for company in companies:
     company_address.append(company.address)
     company_year.append(company.year)
 
+
+df = pd.DataFrame({
+    "App": q1_name,
+    "App Download Count": app_download_count
+})
+fig = px.bar(df, x="App", y="App Download Count")
 
 #App layout
 app = DjangoDash("DashAppNeo4j")
@@ -110,8 +134,59 @@ app.layout = html.Div(children=[
             ], style={ 'border': 'solid', 'border-width': '1px 0'}) for i in range(len(app_name))
         ])
     ],style={'width': '100%', 'border-collapse': 'collapse'}),
+    html.H2(children='Bar Chart:', style={
+        'textAlign': 'left',
+    }),
+    html.Div(children='Y Axis Value', style={
+        'textAlign': 'left',
+        'color': '#222222',
+    }),
+    html.Div([
+        html.H3(children='Y-axis:', style={
+            'textAlign': 'left',
+        }),
+        dcc.Dropdown(
+            id='yaxis_value',
+            options=[{'label': i, 'value': i} for i in ['App Download Count', 'App Category Count', 'Company Develop Count']],
+            value='App Download Count',
+            style={ 'color': '#000000','background-color': '#A0A0A0'} 
+        ),
+    ], style={'width': '25%', 'display': 'inline-block'}),
+    dcc.Graph(
+        id='bar_chart',
+        figure=fig,
+        style={'width': '100%', 'display': 'inline-block'}
+    ),
 ], style={'background-color': '#191970', 'color': '#FF4500', 'font-family': '"Trebuchet MS", sans-serif'})
 
+
+@app.callback(
+    Output('bar_chart', 'figure'),
+    Input('yaxis_value', 'value'))
+def update_graph(yaxis_value):
+    yval = app_download_count
+    xval = q1_name
+    title = "App"
+    if yaxis_value == 'App Category Count':
+        yval = app_category_count
+        xval = q2_name
+        title = "Category"
+    elif yaxis_value == 'Company Develop Count':
+        yval = company_develop_count
+        xval = q3_name
+        title = "Company"
+    df = pd.DataFrame({
+    title: xval,
+    yaxis_value: yval
+    })
+    fig = px.bar(df, x=title, y=yaxis_value)
+    fig.update_layout(
+        plot_bgcolor=colors['background'],
+        paper_bgcolor='#191970',
+        font_color=colors['text']
+    )
+    print("update barchart")
+    return fig
 
 if __name__ == '__main__':
     app.run_server(debug=True)

@@ -18,6 +18,9 @@ from django.db.models import Avg
 def index(request):
     return render(request, 'polls/mainPage.html')
 
+def spreadsheet(request):
+    return render(request, 'polls/spreadsheet.html')
+
 def mongo_index(request):
     return render(request, 'polls/mongoPage.html')
 
