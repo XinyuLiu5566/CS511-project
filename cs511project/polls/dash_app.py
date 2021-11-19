@@ -5,9 +5,12 @@ from re import match
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
+import plotly as py
+import plotly.graph_objs as go 
 # from pandas.core.arrays import string_
 import plotly.express as px
 import pandas as pd
+import random
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output, State
 from .models import *
@@ -15,7 +18,6 @@ from django.core import serializers
 from django.http import JsonResponse
 import numpy as np
 from django.db.models import Avg
-
 
 colors = {
     'background': '#222222',
@@ -67,6 +69,26 @@ scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191
 scatterPlot.update_xaxes(title='Install Number')
 scatterPlot.update_yaxes(title='Rating')
 
+#wordcloud
+
+maxrating = np.max([rating_avg[i]['average'] for i in range(len(rating_avg))])
+minrating = np.min([rating_avg[i]['average'] for i in range(len(rating_avg))])
+normalized_rating = [(int)((rating_avg[i]['average']-minrating)/(maxrating-minrating)*20)+15 for i in range(len(rating_avg))]
+fcolor = [py.colors.DEFAULT_PLOTLY_COLORS[random.randrange(1, 10)] for i in range(len(rating_avg))]
+
+wordcloud_d = go.Scatter(
+                       #x=[random.random() for i in range(len(rating_avg))],
+                       x=list(range(len(rating_avg))),
+                       y=random.choices(range(len(rating_avg)), k=len(rating_avg)),
+                       mode='text',
+                       text= [rating_avg[i]['category'] for i in range(len(rating_avg))],
+                       marker={'opacity': 0.3},
+                       #textfont = {'size': [random.randint(15, 35) for i in range(len(rating_avg))]})
+                       textfont={'size': normalized_rating, 'color': fcolor})
+layout = go.Layout({'xaxis': {'showgrid': False, 'showticklabels': False, 'zeroline': False},
+                    'yaxis': {'showgrid': False, 'showticklabels': False, 'zeroline': False}})
+wordcloud = go.Figure(data=[wordcloud_d], layout=layout)
+
 #Table generating
 
 dt = pd.DataFrame(data)
@@ -87,12 +109,6 @@ def generate_table(max_rows=50):
         ])
     ],id = 'summary', style={'width': '100%', 'border-collapse': 'collapse'})
 
-#SpreadSheet columns
-params = [
-    'category', 'rating', 'rating_count', 'install_number',
-    'price', 'age_required', 'ad_support'
-]
-
 #App layout
 
 app.layout = html.Div(children=[
@@ -102,6 +118,17 @@ app.layout = html.Div(children=[
             'textAlign': 'center',
         }
     ),
+    html.A([
+        html.Div(children='Spreadsheet', style={
+        'left':'50px',
+        'textAlign': 'left',
+        'color': '#FF4500',
+        'background-color': '#222222',
+        'height': '25px',
+        'font-size': '20px',
+        'width': '120px',
+        'border': '1px solid #FF4500'
+    })], target="_parent", href='http://localhost:8000/spreadsheet'),
     html.H2(children='Summary'),
     generate_table(),
     html.H2(children='Bar Chart:', style={
@@ -166,66 +193,20 @@ app.layout = html.Div(children=[
         figure=scatterPlot,
         style={'width': '100%', 'display': 'inline-block'}
     ),
-    html.H2(children='Spreadsheet View:'),
-    html.Div([
-        html.Div(children='Page:', style={
-            'textAlign': 'left',
-            'width': '40%'
-        }),
-        html.Div([
-            dcc.Dropdown(
-                id='pagedrop',
-                options=[{'label': i/100+1, 'value': i/100+1} for i in range(0, len(app_name), 100)],
-                value=1,
-                style={ 'color': '#000000','background-color': '#A0A0A0'} 
-            )],style={'width': '10%'}
-        ),
-    ]),
-    dash_table.DataTable(
-        id='spreadsheet',
-        columns=(
-            [{'id': 'app_name', 'name': 'app_name'}] +
-            [{'id': p, 'name': p} for p in params]
-        ),
-        data=[
-            dict({'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(100)
-        ],
-        editable=True,
-        export_format='csv',
-        style_header={
-            'backgroundColor': 'rgb(50, 50, 50)',
-            'fontWeight': 'bold'
-        },
-         style_data={
-            'backgroundColor': 'rgb(100, 100, 100)',
-            'color': 'black'
-        },
+    dcc.Graph(
+        id='word-cloud',
+        figure=wordcloud,
+        style={'width': '100%', 'display': 'inline-block'}
     ),
-    html.Div(id = 'my_output', style={'display':'None'})
 ], style={'background-color': '#191970', 'color': '#FF4500', 'font-family': '"Trebuchet MS", sans-serif'})
 
 #Callbacks:
-@app.callback(
-    Output('summary', 'children'),
-    Input('my_output', 'children')
-    )
-def update_table(my_output):
-    global rating_avg, rating_count_avg, install_avg, price_avg
-    rating_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating')))
-    rating_count_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating_count')))
-    install_avg = list(AppInfo.objects.values('category').annotate(average = Avg('install_number')))
-    price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('price')))
-
-    print('update summary table')
-    return generate_table()
-
 
 @app.callback(
     Output('example-graph', 'figure'),
     Input('color_value', 'value'),
-    Input('yaxis_value', 'value'),
-    Input('my_output', 'children'))
-def update_graph(color_value, yaxis_value, my_output):
+    Input('yaxis_value', 'value'))
+def update_graph(color_value, yaxis_value):
     cval = category
     if color_value == 'Age Required':
         cval = age_required
@@ -256,9 +237,8 @@ def update_graph(color_value, yaxis_value, my_output):
 @app.callback(
     Output('scatter-plot', 'figure'),
     Input('scatterx', 'value'),
-    Input('scattery', 'value'),
-    Input('my_output', 'children'))
-def update_scatter(scatterx, scattery, my_output):
+    Input('scattery', 'value'))
+def update_scatter(scatterx, scattery):
     xval = install_number
     if scatterx == 'Install Number':
         xval = install_number
@@ -284,36 +264,3 @@ def update_scatter(scatterx, scattery, my_output):
     scatterPlot.update_yaxes(title=scattery)
     print("update scatterplot")
     return scatterPlot
-
-@app.callback(
-    Output('spreadsheet', 'data'),
-    Input('pagedrop', 'value'))
-def update_spreadsheet(p):
-    global base 
-    base = ((int)(p)-1)*100
-    boundary = min(100, len(app_name)-base)
-    return [
-        dict({'app_name':app_name[base+i], 'category': category[base+i], 'rating': rating[base+i], 'rating_count': rating_count[base+i], 'install_number': install_number[i], 'price': price[base+i], 'age_required': age_required[base+i], 'ad_support':ad_support[base+i]}) for i in range(boundary)
-    ]
-
-@app.callback(
-    Output('my_output', 'children'),
-    Input('spreadsheet', 'data_timestamp'),
-    State('spreadsheet', 'active_cell'),
-    State('spreadsheet', 'data'))
-def display_output(timestamp, cell, data):
-    column_name = cell['column_id']
-    row = cell['row']-1
-    id = base+row
-    value = data[row][column_name]
-    print('value = ', value)
-    print('idx = ', id)
-    print('column = ', column_name)
-
-    target = AppInfo.objects.get(idx=id)
-    exec("target." + column_name + " = " + '"' + (str)(value) + '"')
-    target.save()
-
-    exec(column_name + "["+ (str)(id) +"] = " + '"' + (str)(value) + '"')
-
-    return 'Output: {}'.format(data[cell['row']-1]['app_name'])
