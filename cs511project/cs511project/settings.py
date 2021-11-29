@@ -79,9 +79,9 @@ WSGI_APPLICATION = 'cs511project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'djangodatabase',
+        'NAME': 'cs511',
         'USER': 'root',
-        'PASSWORD': '00000000',
+        'PASSWORD': 'apple12345',
     },
     'cluster0':{
         'ENGINE': 'djongo',
@@ -89,7 +89,19 @@ DATABASES = {
         'CLIENT':{
             'host': 'mongodb+srv://apple:apple12345@cluster0.yra3h.mongodb.net/myFirstDatabase?retryWrites=true&w=majority',
         },
-    }
+    },
+    # 'cassandra':{
+    #     'ENGINE': 'django_cassandra_engine',
+    #     'NAME': 'cs511',
+    #     #'TEST_NAME': 'test_db',
+    #     'HOST': '0.0.0.0:3001',
+    #     'OPTIONS': {
+    #         'replication': {
+    #             'strategy_class': 'SimpleStrategy',
+    #             'replication_factor': 1
+    #             }
+    #     }
+    # }
 }
 
 

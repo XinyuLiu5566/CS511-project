@@ -26,3 +26,6 @@ def mongo_index(request):
 
 def neo4j_index(request):
     return render(request, 'polls/neo4jPage.html')
+
+def cassandra_index(request):
+    return render(request, 'polls/cassandraPage.html')
