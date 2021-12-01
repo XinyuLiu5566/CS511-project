@@ -5,16 +5,10 @@ from re import match
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
-# from pandas.core.arrays import string_
-import plotly.express as px
 import pandas as pd
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output, State
 from .models import *
-from django.core import serializers
-from django.http import JsonResponse
-import numpy as np
-from django.db.models import Avg
 
 
 colors = {
@@ -24,46 +18,42 @@ colors = {
 
 app = DjangoDash("Spreadsheet")
 
-data = list(AppInfo.objects.all().values())
-
 # Average value stored as dictionary, tested in other files
 # e.g for count {{"Education":2.3}, {"Sport":1.03}, {"Game":0.88}, .....}
-rating_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating')))
-rating_count_avg = list(AppInfo.objects.values('category').annotate(average = Avg('rating_count')))
-install_avg = list(AppInfo.objects.values('category').annotate(average = Avg('install_number')))
-price_avg = list(AppInfo.objects.values('category').annotate(average = Avg('price')))
-app_name = []
-rating = []
-category = []
-install_number = []
-rating_count = []
-price = []
-age_required = []
-ad_support = []
-
 # global variables
 base = 0
+data_length = len(list(AppInfo.objects.all().values()))
 
-for i in range(0,len(data)):
-    app_name.append(data[i]['app_name']) 
-    rating.append(data[i]['rating'])
-    category.append(data[i]['category'])
-    install_number.append(data[i]['install_number'])
-    rating_count.append(data[i]['rating_count'])
-    price.append(data[i]['price'])
-    age_required.append(data[i]['age_required'])
-    ad_support.append(data[i]['ad_support'])
-
-df = pd.DataFrame({
-    "App": app_name,
-    "Category": category,
-    "Rating": rating
-})
 #SpreadSheet columns
 params = [
     'category', 'rating', 'rating_count', 'install_number',
     'price', 'age_required', 'ad_support'
 ]
+
+def generate_data(p):
+    global base 
+    base = ((int)(p)-1)*100
+    data = list(AppInfo.objects.all().values())
+    app_name = []
+    rating = []
+    category = []
+    install_number = []
+    rating_count = []
+    price = []
+    age_required = []
+    ad_support = []
+    for i in range(base, min(base+100, len(data))):
+        app_name.append(data[i]['app_name']) 
+        rating.append(data[i]['rating'])
+        category.append(data[i]['category'])
+        install_number.append(data[i]['install_number'])
+        rating_count.append(data[i]['rating_count'])
+        price.append(data[i]['price'])
+        age_required.append(data[i]['age_required'])
+        ad_support.append(data[i]['ad_support'])
+    return [
+        dict({'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(len(app_name))
+    ]
 
 #App layout
 
@@ -74,10 +64,11 @@ app.layout = html.Div(children=[
             'textAlign': 'center',
         }
     ),
+    
     html.A([
-        html.Div(children='Dashboard', style={
+        html.Div(children='Home', style={
         'left':'50px',
-        'textAlign': 'left',
+        'textAlign': 'center',
         'color': '#FF4500',
         'background-color': '#222222',
         'height': '25px',
@@ -85,6 +76,45 @@ app.layout = html.Div(children=[
         'width': '120px',
         'border': '1px solid #FF4500'
     })], target="_parent", href='http://localhost:8000/'),
+    html.A([
+        html.Div(children='Bar Chart', style={
+        'left':'50px',
+        'textAlign': 'center',
+        'color': '#FF4500',
+        'background-color': '#222222',
+        'height': '25px',
+        'font-size': '20px',
+        'width': '120px',
+        'border': '1px solid #FF4500', 
+        'left': '36%', 
+        'position': 'absolute'
+    })], target="_parent", href='http://localhost:8000/barchart'),
+    html.A([
+        html.Div(children='Scatter Plot', style={
+        'left':'50px',
+        'textAlign': 'center',
+        'color': '#FF4500',
+        'background-color': '#222222',
+        'height': '25px',
+        'font-size': '20px',
+        'width': '120px',
+        'border': '1px solid #FF4500', 
+        'left': '46%', 
+        'position': 'absolute'
+    })], target="_parent", href='http://localhost:8000/scatterplot'),
+    html.A([
+        html.Div(children='Spreadsheet', style={
+        'left':'50px',
+        'textAlign': 'center',
+        'color': '#FF4500',
+        'background-color': '#222222',
+        'height': '25px',
+        'font-size': '20px',
+        'width': '120px',
+        'border': '1px solid #FF4500', 
+        'left': '56%', 
+        'position': 'absolute'
+    })], target="_parent", href='http://localhost:8000/spreadsheet'),
     html.H2(children='Spreadsheet View:'),
     html.Div([
         html.Div(children='Page:', style={
@@ -94,7 +124,7 @@ app.layout = html.Div(children=[
         html.Div([
             dcc.Dropdown(
                 id='pagedrop',
-                options=[{'label': i/100+1, 'value': i/100+1} for i in range(0, len(app_name), 100)],
+                options=[{'label': i/100+1, 'value': i/100+1} for i in range(0, data_length, 100)],
                 value=1,
                 style={ 'color': '#000000','background-color': '#A0A0A0'} 
             )],style={'width': '10%'}
@@ -106,9 +136,7 @@ app.layout = html.Div(children=[
             [{'id': 'app_name', 'name': 'app_name'}] +
             [{'id': p, 'name': p} for p in params]
         ),
-        data=[
-            dict({'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(100)
-        ],
+        data = generate_data(1),
         editable=True,
         export_format='csv',
         style_header={
@@ -129,12 +157,7 @@ app.layout = html.Div(children=[
     Output('spreadsheet', 'data'),
     Input('pagedrop', 'value'))
 def update_spreadsheet(p):
-    global base 
-    base = ((int)(p)-1)*100
-    boundary = min(100, len(app_name)-base)
-    return [
-        dict({'app_name':app_name[base+i], 'category': category[base+i], 'rating': rating[base+i], 'rating_count': rating_count[base+i], 'install_number': install_number[i], 'price': price[base+i], 'age_required': age_required[base+i], 'ad_support':ad_support[base+i]}) for i in range(boundary)
-    ]
+    return generate_data(p)
 
 @app.callback(
     Output('my_output', 'children'),
@@ -153,7 +176,5 @@ def display_output(timestamp, cell, data):
     target = AppInfo.objects.get(idx=id)
     exec("target." + column_name + " = " + '"' + (str)(value) + '"')
     target.save()
-
-    exec(column_name + "["+ (str)(id) +"] = " + '"' + (str)(value) + '"')
 
     return 'Output: {}'.format(data[cell['row']-1]['app_name'])

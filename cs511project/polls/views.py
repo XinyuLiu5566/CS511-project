@@ -18,6 +18,12 @@ from django.db.models import Avg
 def index(request):
     return render(request, 'polls/mainPage.html')
 
+def barchart(request):
+    return render(request, 'polls/barchart.html')
+
+def scatterplot(request):
+    return render(request, 'polls/scatterplot.html')
+
 def spreadsheet(request):
     return render(request, 'polls/spreadsheet.html')
 
@@ -26,3 +32,6 @@ def mongo_index(request):
 
 def neo4j_index(request):
     return render(request, 'polls/neo4jPage.html')
+
+def cassandra_index(request):
+    return render(request, 'polls/cassandraPage.html')
