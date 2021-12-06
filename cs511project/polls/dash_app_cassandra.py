@@ -20,6 +20,9 @@ from cassandra.cluster import Cluster
 from cassandra.policies import DCAwareRoundRobinPolicy
 from cassandra.auth import PlainTextAuthProvider
 
+import pandas as pd
+import time
+
 colors = {
     'background': '#222222',
     'text': '#FF4500'
@@ -31,16 +34,9 @@ def cassandra_connection():
     cluster = Cluster(['0.0.0.0'], port=3042)
     session = cluster.connect('cs511',wait_for_all_pools=False)
     session.execute('USE cs511')
-    rows = session.execute('SELECT * FROM google_store limit 10')
-    for row in rows:
-        print(row)
+    return session, cluster
 
-cassandra_connection()
-#session, cluster_con = cassandra_connection()
-#ans = session.execute("select * from google_store limit 10")
-#print(ans)
-
-# data = list(AppInfo_Mongo.objects.all().values().using('cassandra'))
+#data = list(AppInfo_Mongo.objects.all().values().using('cassandra'))
 
 # # Average value stored as dictionary, tested in other files
 # # e.g for count {{"Education":2.3}, {"Sport":1.03}, {"Game":0.88}, .....}
@@ -48,14 +44,68 @@ cassandra_connection()
 # rating_count_avg = list(AppInfo_Mongo.objects.values('category').using('cassandra').annotate(average = Avg('rating_count')))
 # install_avg = list(AppInfo_Mongo.objects.values('category').using('cassandra').annotate(average = Avg('install_number')))
 # price_avg = list(AppInfo_Mongo.objects.values('category').using('cassandra').annotate(average = Avg('price')))
-# app_name = []
-# rating = []
-# category = []
-# install_number = []
-# rating_count = []
-# price = []
-# age_required = []
-# ad_support = []
+
+session, cluster = cassandra_connection()
+start = time.time()
+rows = session.execute('SELECT * FROM google_store')
+
+index = []
+ad_support = []
+age_required = []
+app_id = []
+app_name = []
+category = []
+install_number = []
+price = []
+rating = []
+rating_count = []
+release_date = []
+size = []
+system_requirement = []
+for row in rows:
+    index.append(row.idx)
+    ad_support.append(row.ad_support)
+    age_required.append(row.age_required)
+    app_id.append(row.app_id)
+    app_name.append(row.app_name)
+    category.append(row.category)
+    install_number.append(row.install_number)
+    price.append(row.price)
+    rating.append(row.rating)
+    rating_count.append(row.rating_count)
+    release_date.append(row.release_date)
+    size.append(row.size)
+    system_requirement.append(row.system_required)
+
+col_dict = {
+    'index': index,
+    'ad_support': ad_support,
+    'age_required': age_required,
+    'app_id': app_id,
+    'app_name': app_name,
+    'category': category,
+    'install_number': install_number,
+    'price': price,
+    'rating': rating,
+    'rating_count': rating_count,
+    'release_date': release_date,
+    'size': size,
+    'system_requirement': system_requirement
+}
+df = pd.DataFrame(col_dict)
+df_1 = df[['category','rating']]
+df_2 = df[['category','rating_count']]
+df_3 = df[['category','install_number']]
+df_4 = df[['category','price']]
+df_1_result = df_1.groupby(['category']).mean()
+df_2_result = df_2.groupby(['category']).mean()
+df_3_result = df_3.groupby(['category']).mean()
+df_4_result = df_4.groupby(['category']).mean()
+end = time.time()
+
+print(end-start)
+print(df_4_result)
+print(len(df_4))
 
 # # global variables
 # base = 0
