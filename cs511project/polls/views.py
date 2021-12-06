@@ -27,6 +27,9 @@ def scatterplot(request):
 def spreadsheet(request):
     return render(request, 'polls/spreadsheet.html')
 
+def customizeSQL(request):
+    return render(request, 'polls/customizeSQL.html')
+
 def mongo_index(request):
     return render(request, 'polls/mongoPage.html')
 

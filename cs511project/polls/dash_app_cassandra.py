@@ -35,7 +35,7 @@ def cassandra_connection():
     for row in rows:
         print(row)
 
-cassandra_connection()
+#cassandra_connection()
 #session, cluster_con = cassandra_connection()
 #ans = session.execute("select * from google_store limit 10")
 #print(ans)

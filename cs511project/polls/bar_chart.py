@@ -78,7 +78,7 @@ app.layout = html.Div(children=[
         'font-size': '20px',
         'width': '120px',
         'border': '1px solid #FF4500', 
-        'left': '36%', 
+        'left': '30%', 
         'position': 'absolute'
     })], target="_parent", href='http://localhost:8000/barchart'),
     html.A([
@@ -91,7 +91,7 @@ app.layout = html.Div(children=[
         'font-size': '20px',
         'width': '120px',
         'border': '1px solid #FF4500', 
-        'left': '46%', 
+        'left': '40%', 
         'position': 'absolute'
     })], target="_parent", href='http://localhost:8000/scatterplot'),
     html.A([
@@ -104,9 +104,22 @@ app.layout = html.Div(children=[
         'font-size': '20px',
         'width': '120px',
         'border': '1px solid #FF4500', 
-        'left': '56%', 
+        'left': '50%', 
         'position': 'absolute'
     })], target="_parent", href='http://localhost:8000/spreadsheet'),
+    html.A([
+        html.Div(children='SQL', style={
+        'left':'50px',
+        'textAlign': 'center',
+        'color': '#FF4500',
+        'background-color': '#222222',
+        'height': '25px',
+        'font-size': '20px',
+        'width': '120px',
+        'border': '1px solid #FF4500', 
+        'left': '60%', 
+        'position': 'absolute'
+    })], target="_parent", href='http://localhost:8000/customizeSQL'),
     html.H2(children='Bar Chart:', style={
         'textAlign': 'left',
     }),
