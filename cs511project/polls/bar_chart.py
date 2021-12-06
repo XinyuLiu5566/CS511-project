@@ -9,32 +9,48 @@ import pandas as pd
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output
 from .models import *
+import time
+from cassandra.cluster import Cluster
+from cassandra.policies import DCAwareRoundRobinPolicy
+from cassandra.auth import PlainTextAuthProvider
+
 
 colors = {
     'background': '#222222',
     'text': '#FF4500'
 }
 
+
+cluster = Cluster(['127.0.0.1'], port=9042)
+session = cluster.connect('cs511',wait_for_all_pools=False)
+session.execute('USE cs511')
+
 app = DjangoDash("barchart")
 
+
+
 def generate_graph(color_value, yaxis_value):
-    data = list(AppInfo.objects.all().values())
+    data = session.execute('SELECT * FROM google_store')
+    tmp = data[0] #do not remove
     if color_value == 'Age Required':
-        cval = [d['age_required'] for d in data]
+        cval = [d.age_required for d in data]
     elif color_value == 'Ad Support':
-        cval = [d['ad_support'] for d in data]
+        cval = [d.ad_support for d in data]
     else:
-        cval = [d['category'] for d in data]
+        cval = [d.category for d in data]
     if yaxis_value == 'Install Number':
-        yval = [d['install_number'] for d in data]
+        yval = [d.install_number for d in data]
     elif yaxis_value == 'Rating Count':
-        yval = [d['rating_count'] for d in data]
+        yval = [d.rating_count for d in data]
     elif yaxis_value == 'Price':
-        yval = [d['price'] for d in data]
+        yval = [d.price for d in data]
     else:
-        yval = [d['rating'] for d in data]
+        yval = [d.rating for d in data]
+    #print('cval len: ',len(cval))
+    #print('yval len: ',len(yval))
+    #print('appname len: ',len([d.app_name for d in data]))
     df = pd.DataFrame({
-    "App": [d['app_name'] for d in data],
+    "App": [d.app_name for d in data],
     color_value: cval,
     yaxis_value: yval
     })

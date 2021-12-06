@@ -35,8 +35,8 @@ class AppInfo(models.Model):
     age_required = models.CharField(max_length=255)
     ad_support = models.CharField(max_length=255)
 
-    def __str__(self):
-        return self.app_name + '-' + self.app_id
+    #def __str__(self):
+    #    return { 'app_name':self.app_name, 'category': self.category, 'rating': self.rating, 'rating_count':}
 
     class Meta:
         managed = False
@@ -58,3 +58,9 @@ class AppInfo_Mongo(models.Model):
     ad_support = models.CharField(max_length=255)
     class Meta:
         db_table = "google_store"
+
+class AppInfo_query(models.Model):
+    query = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = "query"

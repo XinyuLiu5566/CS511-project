@@ -6,15 +6,24 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_table
 import pandas as pd
+import time
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output, State
 from .models import *
+
+from cassandra.cluster import Cluster
+from cassandra.policies import DCAwareRoundRobinPolicy
+from cassandra.auth import PlainTextAuthProvider
 
 
 colors = {
     'background': '#222222',
     'text': '#FF4500'
 }
+
+cluster = Cluster(['127.0.0.1'], port=9042)
+session = cluster.connect('cs511',wait_for_all_pools=False)
+session.execute('USE cs511')
 
 app = DjangoDash("Spreadsheet")
 
@@ -33,7 +42,8 @@ params = [
 def generate_data(p):
     global base 
     base = ((int)(p)-1)*100
-    data = list(AppInfo.objects.all().values())
+    data = session.execute('SELECT * FROM google_store')
+    idx = []
     app_name = []
     rating = []
     category = []
@@ -42,17 +52,18 @@ def generate_data(p):
     price = []
     age_required = []
     ad_support = []
-    for i in range(base, min(base+100, len(data))):
-        app_name.append(data[i]['app_name']) 
-        rating.append(data[i]['rating'])
-        category.append(data[i]['category'])
-        install_number.append(data[i]['install_number'])
-        rating_count.append(data[i]['rating_count'])
-        price.append(data[i]['price'])
-        age_required.append(data[i]['age_required'])
-        ad_support.append(data[i]['ad_support'])
+    for i in range(base, min(base+100, data_length)):
+        idx.append(data[i].idx)
+        app_name.append(data[i].app_name) 
+        rating.append(data[i].rating)
+        category.append(data[i].category)
+        install_number.append(data[i].install_number)
+        rating_count.append(data[i].rating_count)
+        price.append(data[i].price)
+        age_required.append(data[i].age_required)
+        ad_support.append(data[i].ad_support)
     return [
-        dict({'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(len(app_name))
+        dict({'idx':idx[i], 'app_name':app_name[i], 'category': category[i], 'rating': rating[i], 'rating_count': rating_count[i], 'install_number': install_number[i], 'price': price[i], 'age_required': age_required[i], 'ad_support':ad_support[i]}) for i in range(len(app_name))
     ]
 
 #App layout
@@ -127,7 +138,7 @@ app.layout = html.Div(children=[
         'border': '1px solid #FF4500', 
         'left': '60%', 
         'position': 'absolute'
-    })], target="_parent", href='http://localhost:8000/customSQL'),
+    })], target="_parent", href='http://localhost:8000/customizeSQL'),
     html.H2(children='Spreadsheet View:'),
     html.Div([
         html.Div(children='Page:', style={
@@ -146,11 +157,14 @@ app.layout = html.Div(children=[
     dash_table.DataTable(
         id='spreadsheet',
         columns=(
-            [{'id': 'app_name', 'name': 'app_name'}] +
+            [{'id': 'idx', 'name': 'idx'},{'id': 'app_name', 'name': 'app_name'}] +
             [{'id': p, 'name': p} for p in params]
         ),
         data = generate_data(1),
         editable=True,
+        hidden_columns=['idx'],
+        sort_action="native",
+        sort_mode="multi",
         export_format='csv',
         style_header={
             'backgroundColor': 'rgb(50, 50, 50)',
@@ -180,14 +194,32 @@ def update_spreadsheet(p):
 def display_output(timestamp, cell, data):
     column_name = cell['column_id']
     row = cell['row']-1
-    id = base+row
+    id = data[row]['idx']
     value = data[row][column_name]
     print('value = ', value)
     print('idx = ', id)
     print('column = ', column_name)
-
+    #start_time = time.time()
     target = AppInfo.objects.get(idx=id)
     exec("target." + column_name + " = " + '"' + (str)(value) + '"')
     target.save()
+    #end_time = time.time()
+    #print('MySQL Updata:', end_time-start_time)
+    
+    #start_time = time.time()
+    if column_name == 'rating' or column_name == 'rating_count' or column_name == 'install_number' or column_name == 'price':
+        #print('UPDATE google_store SET '+column_name+' = "'+(str)(value)+'" WHERE idx = '+(str)(id))
+        session.execute('UPDATE google_store SET '+column_name+' = '+(str)(value)+' WHERE idx = '+(str)(id))
+    else:
+        #print('UPDATE google_store SET '+column_name+' = \''+(str)(value)+'\' WHERE idx = '+(str)(id))
+        session.execute('UPDATE google_store SET '+column_name+' = \''+(str)(value)+'\' WHERE idx = '+(str)(id))
+    #end_time = time.time()
+    #print('Cassandra Updata:', end_time-start_time)
 
+    #start_time = time.time()
+    #target = AppInfo_Mongo.objects.using('cluster0').get(idx=id)
+    #exec("target." + column_name + " = " + '"' + (str)(value) + '"')
+    #target.save()
+    #end_time = time.time()
+    #print('MongoDB Updata:', end_time-start_time)
     return 'Output: {}'.format(data[cell['row']-1]['app_name'])

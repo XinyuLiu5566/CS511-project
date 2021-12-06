@@ -8,33 +8,43 @@ import plotly.express as px
 from django_plotly_dash import DjangoDash
 from dash.dependencies import Input, Output
 from .models import *
+
+from cassandra.cluster import Cluster
+from cassandra.policies import DCAwareRoundRobinPolicy
+from cassandra.auth import PlainTextAuthProvider
+
 colors = {
     'background': '#222222',
     'text': '#FF4500'
 }
 
+cluster = Cluster(['127.0.0.1'], port=9042)
+session = cluster.connect('cs511',wait_for_all_pools=False)
+session.execute('USE cs511')
+
 app = DjangoDash("scatterplot")
 
 def generate_scatter(scatterx, scattery):
-    data = list(AppInfo.objects.all().values())
+    data = session.execute('SELECT * FROM google_store')
+    tmp = data[0] #do not remove
     if scatterx == 'Rating':
-        xval = [d['rating'] for d in data]
+        xval = [d.rating for d in data]
     elif scatterx == 'Rating Count':
-        xval = [d['rating_count'] for d in data]
+        xval = [d.rating_count for d in data]
     elif scatterx == 'Price':
-        xval = [d['price'] for d in data]
+        xval = [d.price for d in data]
     else:
-        xval = [d['install_number'] for d in data]
+        xval = [d.install_number for d in data]
     if scattery == 'Install Number':
-        yval = [d['install_number'] for d in data]
+        yval = [d.install_number for d in data]
     elif scattery == 'Rating Count':
-        yval = [d['rating_count'] for d in data]
+        yval = [d.rating_count for d in data]
     elif scattery == 'Price':
-        yval = [d['price'] for d in data]
+        yval = [d.price for d in data]
     else:
-        yval = [d['rating'] for d in data]
+        yval = [d.rating for d in data]
 
-    scatterPlot = px.scatter(x=xval, y=yval, hover_name=[d['app_name'] for d in data])
+    scatterPlot = px.scatter(x=xval, y=yval, hover_name=[d.app_name for d in data])
     scatterPlot.update_layout(plot_bgcolor=colors['background'], paper_bgcolor='#191970',font_color=colors['text'])
     scatterPlot.update_xaxes(title=scatterx)
     scatterPlot.update_yaxes(title=scattery)
